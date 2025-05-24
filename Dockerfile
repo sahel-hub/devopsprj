@@ -5,7 +5,7 @@ FROM nginx:alpine
 RUN rm -rf /usr/share/nginx/html/*
 
 # Copy the local site files into the Nginx web directory
-COPY . /usr/share/nginx/html
+COPY bus-booking-site/ /usr/share/nginx/html
 
 # Expose port 80
 EXPOSE 80
