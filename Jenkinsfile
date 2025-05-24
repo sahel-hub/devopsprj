@@ -2,44 +2,40 @@ pipeline {
     agent any
 
     environment {
-        IMAGE_NAME = 'bus-booking-site-image'
-        CONTAINER_NAME = 'bus-booking-site-container'
+        IMAGE_NAME = 'bus-booking-site'
+        CONTAINER_NAME = 'booking-site'
+        PORT_MAPPING = '8093:80'
     }
 
     stages {
         stage('Build Docker Image') {
             steps {
-                dir('bus-booking-site') {
-                    script {
-                        bat "docker build -t %IMAGE_NAME% ."
-                    }
-                }
+                echo 'Building Docker image...'
+                bat "docker build -t ${env.IMAGE_NAME} ."
             }
         }
 
-        stage('Run Container') {
+        stage('Remove Existing Container') {
             steps {
-                script {
-                    bat "docker stop %CONTAINER_NAME% || echo Not running"
-                    bat "docker rm %CONTAINER_NAME% || echo Not found"
-                    bat "docker run -d -p 8084:80 --name %CONTAINER_NAME% %IMAGE_NAME%"
-                }
+                echo 'Removing existing Docker container if exists...'
+                bat "docker rm -f ${env.CONTAINER_NAME} || exit 0"
             }
         }
 
-        stage('Verify Deployment') {
+        stage('Run Docker Container') {
             steps {
-                echo 'Checking if the site is up...'
-                bat 'curl http://localhost:8084 || echo Site unreachable'
+                echo 'Running new Docker container...'
+                bat "docker run -d -p ${env.PORT_MAPPING} --name ${env.CONTAINER_NAME} ${env.IMAGE_NAME}"
             }
         }
     }
 
     post {
-        always {
-            echo 'Cleaning up...'
-            bat 'docker stop %CONTAINER_NAME% || echo Already stopped'
-            bat 'docker rm %CONTAINER_NAME% || echo Already removed'
+        success {
+            echo "Deployment successful. Application running at http://localhost:8093"
+        }
+        failure {
+            echo "Pipeline failed. Please check the error logs."
         }
     }
 }
